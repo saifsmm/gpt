@@ -4,22 +4,47 @@ const app = express();
 app.use(express.json());
 
 const COMPANY_LOGIN = "dorchesterprt";
-const ACCESS_TOKEN = "6660416c396db825aab96f8f605f71bcdf76b936581289fa5d966134bb6788fe";
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "Dubai#2021";
 
+let userToken = null;
+
+// 🔐 Get Admin User Token
+async function getUserToken() {
+  try {
+    const res = await axios.post("https://user-api.simplybook.me/login", {
+      jsonrpc: "2.0",
+      method: "getUserToken",
+      params: {
+        company: COMPANY_LOGIN,
+        login: ADMIN_USERNAME,
+        password: ADMIN_PASSWORD
+      },
+      id: 1
+    });
+
+    userToken = res.data.result.user_token;
+    console.log("✅ Admin user_token acquired.");
+  } catch (err) {
+    console.error("❌ Failed to get user_token:", err.response?.data || err.message);
+  }
+}
+
+// 🟢 Book Route
 app.post("/book", async (req, res) => {
   const { name, email, date, time } = req.body;
 
-  // Combine date + time for start_date_time
   const startDateTime = `${date} ${time}`;
 
   try {
-    const response = await axios.post(
+    if (!userToken) {
+      await getUserToken();
+    }
+
+    const booking = await axios.post(
       "https://user-api.simplybook.me/admin/booking",
       {
-        client: {
-          name,
-          email
-        },
+        client: { name, email },
         booking: {
           start_date_time: startDateTime,
           service_id: 238807
@@ -28,40 +53,41 @@ app.post("/book", async (req, res) => {
       {
         headers: {
           "X-Company-Login": COMPANY_LOGIN,
-          "X-Token": ACCESS_TOKEN,
+          "X-User-Token": userToken,
           "Content-Type": "application/json"
         }
       }
     );
 
-    if (response.data && response.data.id) {
+    if (booking.data?.id) {
       res.json({
         success: true,
         message: `✅ Booking confirmed for ${name} on ${date} at ${time}`,
-        booking_id: response.data.id
+        booking_id: booking.data.id
       });
     } else {
       res.json({
         success: false,
         message: "Booking failed — check service ID or time format.",
-        response: response.data
+        response: booking.data
       });
     }
-  } catch (error) {
-    console.error("Booking error:", error.response?.data || error.message);
+  } catch (err) {
     res.status(500).json({
       success: false,
       message: "❌ Booking failed due to API error.",
-      error: error.response?.data || error.message
+      error: err.response?.data || err.message
     });
   }
 });
 
+// Default route
 app.get("/", (req, res) => {
-  res.send("🟢 GPT booking server is running.");
+  res.send("🟢 GPT-SimplyBook backend is running.");
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(PORT, async () => {
+  console.log(`Server running on port ${PORT}`);
+  await getUserToken(); // Get token on startup
 });
