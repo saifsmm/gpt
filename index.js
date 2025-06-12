@@ -32,8 +32,9 @@ app.post("/book", async (req, res) => {
           email: email,
         },
         booking: {
-          start_date_time: `${date} ${time}`,
-          service_id: service_id,
+          start_date_time: "2025-06-12 10:00",
+          service_id: 1,
+
         },
       },
       {
