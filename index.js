@@ -2,16 +2,15 @@ const express = require("express");
 const app = express();
 app.use(express.json());
 
-// Dummy booking simulation
 app.post("/book", async (req, res) => {
   const { name, email, service_id, date, time } = req.body;
 
-  console.log("Received booking request:", { name, email, service_id, date, time });
+  console.log("Fake booking received:", { name, email, service_id, date, time });
 
-  // Simulate success
+  // Simulated success response
   res.json({
     success: true,
-    message: `Booking confirmed for ${name} on ${date} at ${time} for service ID ${service_id}`,
+    message: `✅ Booking confirmed for ${name} on ${date} at ${time} for service ID ${service_id}`,
     booking_details: {
       name,
       email,
@@ -23,7 +22,7 @@ app.post("/book", async (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("GPT booking backend (dummy mode) running ✅");
+  res.send("🟢 Dummy GPT Booking API is running.");
 });
 
 const PORT = process.env.PORT || 3000;
